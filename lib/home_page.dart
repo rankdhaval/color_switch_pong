@@ -25,6 +25,7 @@ class _HomePageState extends State<HomePage> {
   Color brickColor = Colors.pink;
   Color ballColor = Colors.pink;
   int score = 0;
+  int life = 3;
 
   //score objrct variable
   Color pointObjectColor = Colors.pink;
@@ -32,6 +33,10 @@ class _HomePageState extends State<HomePage> {
   double pointObjectWidth = 20;
   double pointObjectX = 20;
   double pointObjectY = 20;
+
+  //ball speed
+  double ballSpeedX = 0.003;
+  double ballSpeedY = 0.003;
 
   List<Color> colors = [
     Colors.pink,
@@ -56,67 +61,56 @@ class _HomePageState extends State<HomePage> {
   }
 
   void updateDirection() {
-    setState(() {
-      if (ballY >= 0.84 && playerX + playerWidth >= ballX && playerX <= ballX) {
-        ballYDirection = Direction.UP;
-        ballColor = brickColor;
-      } else if (ballY <= -0.9) {
-        ballYDirection = Direction.DOWN;
-      }
-      if (ballX >= 1) {
-        ballXDirection = Direction.LEFT;
-      } else if (ballX <= -1) {
-        ballXDirection = Direction.RIGHT;
-      }
-    });
+    if (ballY >= 0.84 && playerX + playerWidth >= ballX && playerX <= ballX) {
+      ballYDirection = Direction.UP;
+      ballColor = brickColor;
+    } else if (ballY <= -1) {
+      ballYDirection = Direction.DOWN;
+    }
+    if (ballX >= 1) {
+      ballXDirection = Direction.LEFT;
+    } else if (ballX <= -1) {
+      ballXDirection = Direction.RIGHT;
+    }
   }
 
   void moveLeft() {
-    setState(() {
-      if (!(playerX - 0.1 <= -1)) playerX -= 0.1;
-    });
+    if (!(playerX <= -1)) playerX -= 0.025;
   }
 
   void moveRight() {
-    setState(() {
-      if (!(playerX + playerWidth >= 1)) playerX += 0.1;
-    });
+    if (!(playerX + playerWidth >= 1)) playerX += 0.025;
   }
 
   void startGame() {
-    gameHasStarted = true;
-    Timer.periodic(Duration(milliseconds: 1), (timer) {
-      setState(() {
-        updateDirection();
-        moveBall();
-        moveEnemy();
-        scoreCounter();
-        if (isPlayerDead()) {
-          timer.cancel();
-          reSetGame();
-        }
+    if (!gameHasStarted) {
+      gameHasStarted = true;
+      Timer.periodic(Duration(milliseconds: 1), (timer) {
+        setState(() {
+          updateDirection();
+          moveBall();
+          // moveEnemy();
+          scoreCounter();
+          if (isPlayerDead()) {
+            timer.cancel();
+            reSetGame();
+          }
+        });
       });
-    });
+    }
   }
 
   void scoreCounter() {
-    print((pointObjectX +
-        SizeConfig.getAlignmentOfScoringObject(pointObjectWidth)));
-    print((pointObjectX -
-        SizeConfig.getAlignmentOfScoringObject(pointObjectWidth)));
-    setState(() {
-      if (ballX <
-              (pointObjectX +
-                  SizeConfig.getAlignmentOfScoringObject(pointObjectWidth)) &&
-          ballX >
-              (pointObjectX -
-                  SizeConfig.getAlignmentOfScoringObject(pointObjectWidth)) &&
-          ballY < 0.005 &&
-          ballY > -0.005) {
-        score++;
-      }
-      print(score);
-    });
+    if (ballX <
+            (pointObjectX +
+                SizeConfig.getAlignmentOfScoringObject(pointObjectWidth)) &&
+        ballX >
+            (pointObjectX -
+                SizeConfig.getAlignmentOfScoringObject(pointObjectWidth)) &&
+        ballY < 0.005 &&
+        ballY > -0.005) {
+      score++;
+    }
   }
 
   void moveEnemy() {
@@ -126,36 +120,59 @@ class _HomePageState extends State<HomePage> {
   }
 
   void reSetGame() {
-    setState(() {
-      gameHasStarted = false;
-      ballX = 0;
-      ballY = 0.84;
-      playerX = -0.2;
-      enemyX = -0.2;
-    });
+    gameHasStarted = false;
+    ballX = 0;
+    ballY = 0.84;
+    playerX = -0.2;
+    enemyX = -0.2;
   }
 
   bool isPlayerDead() {
     if (ballY >= 1) {
+      --life;
+      if (life == 0) {
+        //TODO: show dialog box and navigate back
+        Widget okButton = TextButton(
+          child: Text("OK"),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        );
+
+        // set up the AlertDialog
+        AlertDialog alert = AlertDialog(
+          title: Text("Game Over"),
+          content: Text("You are Out"),
+          actions: [
+            okButton,
+          ],
+        );
+
+        // show the dialog
+        showDialog<AlertDialog>(
+          context: context,
+          builder: (BuildContext context) {
+            return alert;
+          },
+        );
+      }
       return true;
     }
     return false;
   }
 
   void moveBall() {
-    setState(() {
-      if (ballYDirection == Direction.DOWN) {
-        ballY += 0.008;
-      } else if (ballYDirection == Direction.UP) {
-        ballY -= 0.008;
-      }
+    if (ballYDirection == Direction.DOWN) {
+      ballY += ballSpeedX;
+    } else if (ballYDirection == Direction.UP) {
+      ballY -= ballSpeedX;
+    }
 
-      if (ballXDirection == Direction.LEFT) {
-        ballX -= 0.008;
-      } else if (ballXDirection == Direction.RIGHT) {
-        ballX += 0.008;
-      }
-    });
+    if (ballXDirection == Direction.LEFT) {
+      ballX -= ballSpeedY;
+    } else if (ballXDirection == Direction.RIGHT) {
+      ballX += ballSpeedY;
+    }
   }
 
   @override
@@ -164,69 +181,128 @@ class _HomePageState extends State<HomePage> {
     super.initState();
   }
 
+  Offset? previousDetail;
+
   @override
   Widget build(BuildContext context) {
-    return RawKeyboardListener(
-      focusNode: FocusNode(),
-      autofocus: true,
-      onKey: (event) {
-        if (event.isKeyPressed(LogicalKeyboardKey.arrowLeft)) {
-          moveLeft();
-        } else if (event.isKeyPressed(LogicalKeyboardKey.arrowRight)) {
-          moveRight();
-        }
+    return GestureDetector(
+      onHorizontalDragStart: (DragStartDetails details) {
+        previousDetail = details.globalPosition;
       },
-      child: GestureDetector(
-        onTap: startGame,
-        child: Scaffold(
-          backgroundColor: Colors.grey[900],
-          body: Center(
-            child: Stack(
-              children: [
-                CoverScreen(gameHasStarted: gameHasStarted),
-                MyBrick(
-                  x: enemyX,
-                  y: -1,
-                  playerWidth: playerWidth,
-                  color: Colors.white,
+      onHorizontalDragUpdate: (DragUpdateDetails details) {
+        if (details.globalPosition.dx > previousDetail!.dx) {
+          if (details.globalPosition.dx > (previousDetail!.dx + 2)) {
+            moveRight();
+            previousDetail = details.globalPosition;
+          }
+        } else {
+          if ((details.globalPosition.dx + 2) < previousDetail!.dx) {
+            moveLeft();
+            previousDetail = details.globalPosition;
+          }
+        }
+        setState(() {});
+      },
+      child: RawKeyboardListener(
+        focusNode: FocusNode(),
+        autofocus: true,
+        onKey: (event) {
+          if (event.isKeyPressed(LogicalKeyboardKey.arrowLeft)) {
+            moveLeft();
+          } else if (event.isKeyPressed(LogicalKeyboardKey.arrowRight)) {
+            moveRight();
+          }
+          setState(() {});
+        },
+        child: GestureDetector(
+          onTap: startGame,
+          child: Scaffold(
+            backgroundColor: Colors.grey[900],
+            appBar: PreferredSize(
+              preferredSize: Size.fromHeight(50),
+              child: Container(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          'assets/images/coin.png',
+                          width: 20,
+                        ),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        Text(
+                          score.toString(),
+                          style: TextStyle(fontSize: 20, color: Colors.white),
+                        )
+                      ],
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(
+                          life,
+                          (index) => Image.asset(
+                                'assets/images/heart.png',
+                                width: 20,
+                              )),
+                    )
+                  ],
                 ),
-                MyBrick(
-                  x: playerX,
-                  y: 0.9,
-                  playerWidth: playerWidth,
-                  color: brickColor,
-                ),
-                MyBall(
-                  x: ballX,
-                  y: ballY,
-                  myBallColor: ballColor,
-                ),
-                Container(
-                  alignment: Alignment(0, 1),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: List.generate(
-                        colors.length,
-                        (index) => ColorOptions(
-                              color: colors[index],
-                              selected: selectedColor == colors[index],
-                              onTap: () {
-                                setState(() {
-                                  selectedColor = colors[index];
-                                  brickColor = selectedColor;
-                                });
-                              },
-                            )),
+              ),
+            ),
+            body: Center(
+              child: Stack(
+                children: [
+                  CoverScreen(gameHasStarted: gameHasStarted),
+
+                  /*MyBrick(
+                    x: enemyX,
+                    y: -1,
+                    playerWidth: playerWidth,
+                    color: Colors.white,
+                  ),*/
+
+                  MyBrick(
+                    x: playerX,
+                    y: 0.9,
+                    playerWidth: playerWidth,
+                    color: brickColor,
                   ),
-                ),
-                PointObject(
-                  color: pointObjectColor,
-                  width: pointObjectWidth,
-                  height: pointObjectHeight,
-                  x: pointObjectX,
-                  y: pointObjectY,
-                )
-              ],
+                  MyBall(
+                    x: ballX,
+                    y: ballY,
+                    myBallColor: ballColor,
+                  ),
+                  Container(
+                    alignment: Alignment(0, 1),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: List.generate(
+                          colors.length,
+                          (index) => ColorOptions(
+                                color: colors[index],
+                                selected: selectedColor == colors[index],
+                                onTap: () {
+                                  setState(() {
+                                    selectedColor = colors[index];
+                                    brickColor = selectedColor;
+                                  });
+                                },
+                              )),
+                    ),
+                  ),
+                  PointObject(
+                    color: pointObjectColor,
+                    width: pointObjectWidth,
+                    height: pointObjectHeight,
+                    x: pointObjectX,
+                    y: pointObjectY,
+                  )
+                ],
+              ),
             ),
           ),
         ),
