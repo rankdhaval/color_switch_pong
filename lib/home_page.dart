@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:game_template/assets.dart';
 import 'package:game_template/size_config.dart';
 
 enum Direction { UP, DOWN, LEFT, RIGHT }
@@ -17,7 +18,7 @@ class _HomePageState extends State<HomePage> {
   bool gameHasStarted = false;
   double ballX = 0;
   double ballY = 0.84;
-  double playerX = 0;
+  double playerX = -0.2;
   double enemyX = -0.2;
   double playerWidth = 0.4;
   Direction ballYDirection = Direction.DOWN;
@@ -27,8 +28,10 @@ class _HomePageState extends State<HomePage> {
   int score = 0;
   int life = 3;
 
+  Timer? _timer;
+
   //score objrct variable
-  Color pointObjectColor = Colors.pink;
+  GemModel pointObject = GemModel(color: Colors.pink, path: pinkGem);
   double pointObjectHeight = 20;
   double pointObjectWidth = 20;
   double pointObjectX = 20;
@@ -40,9 +43,16 @@ class _HomePageState extends State<HomePage> {
 
   List<Color> colors = [
     Colors.pink,
-    Colors.yellowAccent,
+    Colors.green,
     Colors.deepPurple,
     Colors.cyan
+  ];
+
+  List<GemModel> scores = [
+    GemModel(color: Colors.pink, path: pinkGem),
+    GemModel(color: Colors.green, path: greenGem),
+    GemModel(color: Colors.deepPurple, path: purpleGem),
+    GemModel(color: Colors.cyan, path: skyGem),
   ];
 
   Direction ballXDirection = Direction.LEFT;
@@ -50,9 +60,7 @@ class _HomePageState extends State<HomePage> {
   void getRandomValuesForScoreObject() {
     final _random = Random();
     setState(() {
-      pointObjectColor = colors[_random.nextInt(colors.length)];
-      pointObjectHeight = 20;
-      pointObjectWidth = _random.nextInt(300 - 100).toDouble();
+      pointObject = scores[_random.nextInt(colors.length)];
       bool xval = _random.nextBool();
       pointObjectX = (_random.nextInt(10) / 15) * (xval == true ? 1 : -1);
       bool yval = _random.nextBool();
@@ -76,23 +84,26 @@ class _HomePageState extends State<HomePage> {
 
   void moveLeft() {
     if (!(playerX <= -1)) playerX -= 0.025;
+    if (!gameHasStarted) ballX = playerX + (playerWidth / 2);
   }
 
   void moveRight() {
     if (!(playerX + playerWidth >= 1)) playerX += 0.025;
+    if (!gameHasStarted) ballX = playerX + (playerWidth / 2);
   }
 
   void startGame() {
     if (!gameHasStarted) {
       gameHasStarted = true;
       Timer.periodic(Duration(milliseconds: 1), (timer) {
+        _timer = timer;
         setState(() {
           updateDirection();
           moveBall();
           // moveEnemy();
           scoreCounter();
           if (isPlayerDead()) {
-            timer.cancel();
+            _timer?.cancel();
             reSetGame();
           }
         });
@@ -101,15 +112,18 @@ class _HomePageState extends State<HomePage> {
   }
 
   void scoreCounter() {
-    if (ballX <
-            (pointObjectX +
-                SizeConfig.getAlignmentOfScoringObject(pointObjectWidth)) &&
-        ballX >
-            (pointObjectX -
-                SizeConfig.getAlignmentOfScoringObject(pointObjectWidth)) &&
-        ballY < 0.005 &&
-        ballY > -0.005) {
-      score++;
+    double length = SizeConfig.getAlignmentOfScoringObject(30);
+    if (ballX < (pointObjectX + length) &&
+        ballX > (pointObjectX - length) &&
+        ballY < (pointObjectY + length) &&
+        ballY > (pointObjectY - length)) {
+      if (ballColor == pointObject.color) {
+        score++;
+        getRandomValuesForScoreObject();
+      } else {
+        _timer?.cancel();
+        reSetGame();
+      }
     }
   }
 
@@ -177,8 +191,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    getRandomValuesForScoreObject();
     super.initState();
+
+    getRandomValuesForScoreObject();
   }
 
   Offset? previousDetail;
@@ -216,92 +231,96 @@ class _HomePageState extends State<HomePage> {
         },
         child: GestureDetector(
           onTap: startGame,
-          child: Scaffold(
-            backgroundColor: Colors.grey[900],
-            appBar: PreferredSize(
-              preferredSize: Size.fromHeight(50),
-              child: Container(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: SafeArea(
+            child: Scaffold(
+              backgroundColor: Colors.grey[900],
+              appBar: PreferredSize(
+                preferredSize: Size.fromHeight(50),
+                child: Container(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset(
+                            'assets/images/coin.png',
+                            width: 20,
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          Text(
+                            score.toString(),
+                            style: TextStyle(fontSize: 20, color: Colors.white),
+                          )
+                        ],
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(
+                            life,
+                            (index) => Image.asset(
+                                  'assets/images/heart.png',
+                                  width: 20,
+                                )),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              body: Center(
+                child: Stack(
                   children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Image.asset(
-                          'assets/images/coin.png',
-                          width: 20,
-                        ),
-                        SizedBox(
-                          width: 10,
-                        ),
-                        Text(
-                          score.toString(),
-                          style: TextStyle(fontSize: 20, color: Colors.white),
-                        )
-                      ],
+                    CoverScreen(gameHasStarted: gameHasStarted),
+
+                    /*MyBrick(
+                      x: enemyX,
+                      y: -1,
+                      playerWidth: playerWidth,
+                      color: Colors.white,
+                    ),*/
+
+                    MyBrick(
+                      x: playerX,
+                      y: 0.9,
+                      playerWidth: playerWidth,
+                      color: brickColor,
                     ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: List.generate(
-                          life,
-                          (index) => Image.asset(
-                                'assets/images/heart.png',
-                                width: 20,
-                              )),
+                    MyBall(
+                      x: ballX,
+                      y: ballY,
+                      myBallColor: ballColor,
+                    ),
+                    Container(
+                      alignment: Alignment(0, 1),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: List.generate(
+                            colors.length,
+                            (index) => ColorOptions(
+                                  color: colors[index],
+                                  selected: selectedColor == colors[index],
+                                  onTap: () {
+                                    setState(() {
+                                      selectedColor = colors[index];
+                                      brickColor = selectedColor;
+                                      if (!gameHasStarted)
+                                        ballColor = selectedColor;
+                                    });
+                                  },
+                                )),
+                      ),
+                    ),
+                    PointObject(
+                      gemModel: pointObject,
+                      width: pointObjectWidth,
+                      height: pointObjectHeight,
+                      x: pointObjectX,
+                      y: pointObjectY,
                     )
                   ],
                 ),
-              ),
-            ),
-            body: Center(
-              child: Stack(
-                children: [
-                  CoverScreen(gameHasStarted: gameHasStarted),
-
-                  /*MyBrick(
-                    x: enemyX,
-                    y: -1,
-                    playerWidth: playerWidth,
-                    color: Colors.white,
-                  ),*/
-
-                  MyBrick(
-                    x: playerX,
-                    y: 0.9,
-                    playerWidth: playerWidth,
-                    color: brickColor,
-                  ),
-                  MyBall(
-                    x: ballX,
-                    y: ballY,
-                    myBallColor: ballColor,
-                  ),
-                  Container(
-                    alignment: Alignment(0, 1),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: List.generate(
-                          colors.length,
-                          (index) => ColorOptions(
-                                color: colors[index],
-                                selected: selectedColor == colors[index],
-                                onTap: () {
-                                  setState(() {
-                                    selectedColor = colors[index];
-                                    brickColor = selectedColor;
-                                  });
-                                },
-                              )),
-                    ),
-                  ),
-                  PointObject(
-                    color: pointObjectColor,
-                    width: pointObjectWidth,
-                    height: pointObjectHeight,
-                    x: pointObjectX,
-                    y: pointObjectY,
-                  )
-                ],
               ),
             ),
           ),
@@ -408,7 +427,7 @@ class PointObject extends StatelessWidget {
   final double x;
   final double y;
   final double width;
-  final Color color;
+  final GemModel gemModel;
   double height = 20;
 
   PointObject(
@@ -417,18 +436,24 @@ class PointObject extends StatelessWidget {
       required this.y,
       required this.width,
       this.height = 20,
-      required this.color})
+      required this.gemModel})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       alignment: Alignment(x, y),
-      child: Container(
-        width: width,
-        height: height,
-        color: color,
+      child: Image.asset(
+        gemModel.path,
+        width: 30,
       ),
     );
   }
+}
+
+class GemModel {
+  final Color color;
+  final String path;
+
+  GemModel({required this.color, required this.path});
 }
