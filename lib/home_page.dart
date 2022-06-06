@@ -308,30 +308,53 @@ class _HomePageState extends State<HomePage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Image.asset(
-                            'assets/images/coin.png',
-                            width: 20,
-                          ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          Text(
-                            score.toString(),
-                            style: TextStyle(fontSize: 20, color: Colors.white),
-                          )
-                        ],
+                      Container(
+                        width: MediaQuery.of(context).size.width / 4,
+                        decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white, width: 2)),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 5,
+                            ),
+                            Image.asset(
+                              jewelGem,
+                              width: 25,
+                            ),
+                            SizedBox(
+                              width: 10,
+                            ),
+                            Text(
+                              score.toString(),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headline5!
+                                  .copyWith(
+                                    color: Colors.white,
+                                    letterSpacing: 2.5,
+                                    fontFamily: 'Permanent Marker',
+                                  ),
+                            )
+                          ],
+                        ),
                       ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: List.generate(
-                            life,
-                            (index) => Image.asset(
-                                  'assets/images/heart.png',
-                                  width: 20,
-                                )),
+                      Container(
+                        padding: EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white, width: 2)),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(
+                              life,
+                              (index) => Image.asset(
+                                    'assets/images/heart.png',
+                                    width: 25,
+                                  )),
+                        ),
                       ),
                     ],
                   ),
