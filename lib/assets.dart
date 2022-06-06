@@ -1,8 +1,8 @@
-const String greenGem = "images/gems/green_gem.png";
-const String purpleGem = "images/gems/purple_gems.png";
-const String skyGem = "images/gems/sky_gem.png";
-const String pinkGem = "images/gems/pink_gem.png";
+const String greenGem = "assets/images/gems/green_gem.png";
+const String purpleGem = "assets/images/gems/purple_gems.png";
+const String skyGem = "assets/images/gems/sky_gem.png";
+const String pinkGem = "assets/images/gems/pink_gem.png";
 
-const String lifeGem = "images/gems/life.png";
+const String lifeGem = "assets/images/gems/life.png";
 
-const String jewelGem = "images/gems/jewel.png";
+const String jewelGem = "assets/images/gems/jewel.png";

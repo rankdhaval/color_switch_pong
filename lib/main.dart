@@ -135,6 +135,11 @@ class MyApp extends StatelessWidget {
               const MainMenuScreen(key: Key('main menu')),
           routes: [
             GoRoute(
+              path: 'gameScreen',
+              builder: (context, state) =>
+                  const HomePage(key: Key('gameScreen')),
+            ),
+            GoRoute(
                 path: 'play',
                 pageBuilder: (context, state) => buildMyTransition(
                       child: const LevelSelectionScreen(
@@ -157,18 +162,18 @@ class MyApp extends StatelessWidget {
                       );
                     },
                   ),
-                  GoRoute(
+                  /*GoRoute(
                     path: 'gameScreen',
                     pageBuilder: (context, state) {
-                      /*final levelNumber = int.parse(state.params['level']!);
+                      */ /*final levelNumber = int.parse(state.params['level']!);
                       final level = gameLevels
-                          .singleWhere((e) => e.number == levelNumber);*/
+                          .singleWhere((e) => e.number == levelNumber);*/ /*
                       return buildMyTransition(
                         child: HomePage(),
                         color: context.watch<Palette>().backgroundPlaySession,
                       );
                     },
-                  ),
+                  ),*/
                   GoRoute(
                     path: 'won',
                     pageBuilder: (context, state) {

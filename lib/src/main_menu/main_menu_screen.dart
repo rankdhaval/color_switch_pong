@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../size_config.dart';
 import '../audio/audio_controller.dart';
 import '../audio/sounds.dart';
 import '../games_services/games_services.dart';
@@ -18,6 +19,7 @@ class MainMenuScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
     final palette = context.watch<Palette>();
     final gamesServicesController = context.watch<GamesServicesController?>();
     final settingsController = context.watch<SettingsController>();
@@ -28,29 +30,38 @@ class MainMenuScreen extends StatelessWidget {
       body: ResponsiveScreen(
         mainAreaProminence: 0.45,
         squarishMainArea: Center(
-          child: Transform.rotate(
-            angle: -0.1,
-            child: const Text(
-              'Flutter Game Template!',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Permanent Marker',
-                fontSize: 55,
-                height: 1,
-              ),
+          child: Text(
+            'COLOR SWITCH PONG',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Permanent Marker',
+              fontSize: 55,
+              letterSpacing: 2.5,
+              color: palette.whitePen,
+              height: 1,
             ),
           ),
         ),
         rectangularMenuArea: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            ElevatedButton(
+            CustomElevatedButton(
+              color: Colors.green,
+              buttonTitle: 'PLAY',
+              onPress: () {
+                audioController.playSfx(SfxType.buttonTap);
+
+                GoRouter.of(context).go('/gameScreen');
+              },
+            ),
+            /*ElevatedButton(
               onPressed: () {
                 audioController.playSfx(SfxType.buttonTap);
-                GoRouter.of(context).go('/play');
+
+                GoRouter.of(context).go('/gameScreen');
               },
               child: const Text('Play'),
-            ),
+            ),*/
             _gap,
             if (gamesServicesController != null) ...[
               _hideUntilReady(
@@ -70,10 +81,14 @@ class MainMenuScreen extends StatelessWidget {
               ),
               _gap,
             ],
-            ElevatedButton(
+            CustomElevatedButton(
+                color: Colors.cyan,
+                buttonTitle: 'Settings',
+                onPress: () => GoRouter.of(context).go('/settings')),
+            /*ElevatedButton(
               onPressed: () => GoRouter.of(context).go('/settings'),
               child: const Text('Settings'),
-            ),
+            ),*/
             _gap,
             Padding(
               padding: const EdgeInsets.only(top: 32),
@@ -120,4 +135,37 @@ class MainMenuScreen extends StatelessWidget {
   }
 
   static const _gap = SizedBox(height: 10);
+}
+
+class CustomElevatedButton extends StatelessWidget {
+  final Color color;
+  final String buttonTitle;
+  final VoidCallback onPress;
+  const CustomElevatedButton(
+      {Key? key,
+      required this.color,
+      required this.buttonTitle,
+      required this.onPress})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.watch<Palette>();
+    return ElevatedButton(
+        style: ElevatedButton.styleFrom(
+            minimumSize: Size(MediaQuery.of(context).size.width / 2.8, 50),
+            primary: color,
+            shape: RoundedRectangleBorder(
+                side: BorderSide(color: palette.whitePen, width: 2),
+                borderRadius: BorderRadius.circular(20))),
+        onPressed: onPress,
+        child: Text(
+          buttonTitle,
+          style: Theme.of(context).textTheme.headline5!.copyWith(
+                color: Colors.white,
+                letterSpacing: 2.5,
+                fontFamily: 'Permanent Marker',
+              ),
+        ));
+  }
 }

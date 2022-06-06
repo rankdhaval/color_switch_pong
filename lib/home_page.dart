@@ -1,15 +1,22 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:game_template/assets.dart';
+import 'package:game_template/score_persistance.dart';
 import 'package:game_template/size_config.dart';
+import 'package:game_template/src/main_menu/main_menu_screen.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 enum Direction { UP, DOWN, LEFT, RIGHT }
 
+const _gap = SizedBox(height: 10);
+
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -27,6 +34,7 @@ class _HomePageState extends State<HomePage> {
   Color ballColor = Colors.pink;
   int score = 0;
   int life = 3;
+  RewardedAd? _rewardedAd;
 
   Timer? _timer;
 
@@ -121,6 +129,7 @@ class _HomePageState extends State<HomePage> {
         score++;
         getRandomValuesForScoreObject();
       } else {
+        decreaseLife();
         _timer?.cancel();
         reSetGame();
       }
@@ -143,33 +152,7 @@ class _HomePageState extends State<HomePage> {
 
   bool isPlayerDead() {
     if (ballY >= 1) {
-      --life;
-      if (life == 0) {
-        //TODO: show dialog box and navigate back
-        Widget okButton = TextButton(
-          child: Text("OK"),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        );
-
-        // set up the AlertDialog
-        AlertDialog alert = AlertDialog(
-          title: Text("Game Over"),
-          content: Text("You are Out"),
-          actions: [
-            okButton,
-          ],
-        );
-
-        // show the dialog
-        showDialog<AlertDialog>(
-          context: context,
-          builder: (BuildContext context) {
-            return alert;
-          },
-        );
-      }
+      decreaseLife();
       return true;
     }
     return false;
@@ -189,10 +172,95 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> decreaseLife() async {
+    --life;
+    if (life == 0) {
+      //TODO: show dialog box and navigate back
+
+      bool disable2x = false;
+      int total = await ScorePersistence().getScore() + score;
+      await showDialog<Widget>(
+              context: context,
+              builder: (context) => PlayerOutDialog(
+                    life: life,
+                    score: score,
+                    totalScore: total,
+                    restart: () {
+                      ScorePersistence().addScore(score);
+
+                      setState(() {
+                        score = 0;
+                        life = 3;
+                      });
+
+                      Navigator.pop(context);
+                    },
+                    extraLife: () {
+                      _rewardedAd!.show(onUserEarnedReward:
+                          (AdWithoutView ad, RewardItem rewardItem) {
+                        // Reward the user for watching an ad.
+                        life++;
+                        setState(() {});
+                        loadRewardedAds();
+                      });
+
+                      Navigator.pop(context);
+                    },
+                    doubleScore: disable2x
+                        ? () {}
+                        : () {
+                            _rewardedAd!.show(onUserEarnedReward:
+                                (AdWithoutView ad, RewardItem rewardItem) {
+                              // Reward the user for watching an ad.
+                              score = score * 2;
+                              loadRewardedAds();
+                              disable2x = true;
+                              setState(() {});
+                            });
+                          },
+                  ),
+              barrierDismissible: false)
+          .then((value) => setState(() {}));
+    }
+  }
+
+  void loadRewardedAds() {
+    RewardedAd.load(
+        adUnitId: Platform.isAndroid
+            ? 'ca-app-pub-9376762525267033/8761258820'
+            : 'ca-app-pub-3940256099942544/1712485313',
+        request: AdRequest(),
+        rewardedAdLoadCallback: RewardedAdLoadCallback(
+          onAdLoaded: (RewardedAd ad) {
+            print('$ad loaded.');
+            // Keep a reference to the ad so you can show it later.
+            this._rewardedAd = ad;
+          },
+          onAdFailedToLoad: (LoadAdError error) {
+            print('RewardedAd failed to load: $error');
+          },
+        )).then((ad) {
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdShowedFullScreenContent: (RewardedAd ad) =>
+            print('$ad onAdShowedFullScreenContent.'),
+        onAdDismissedFullScreenContent: (RewardedAd ad) {
+          print('$ad onAdDismissedFullScreenContent.');
+          ad.dispose();
+        },
+        onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+          print('$ad onAdFailedToShowFullScreenContent: $error');
+          ad.dispose();
+        },
+        onAdImpression: (RewardedAd ad) => print('$ad impression occurred.'),
+      );
+    });
+  }
+
   @override
   void initState() {
     super.initState();
 
+    loadRewardedAds();
     getRandomValuesForScoreObject();
   }
 
@@ -417,8 +485,14 @@ class CoverScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      alignment: Alignment(0, -0.2),
-      child: Text(gameHasStarted ? "" : "Tap to Start"),
+      alignment: Alignment(0, 0),
+      child: Text(
+        gameHasStarted ? "" : "T a p  t o  S t a r t",
+        style: Theme.of(context)
+            .textTheme
+            .headline4!
+            .copyWith(color: Colors.white),
+      ),
     );
   }
 }
@@ -456,4 +530,151 @@ class GemModel {
   final String path;
 
   GemModel({required this.color, required this.path});
+}
+
+class PlayerOutDialog extends StatelessWidget {
+  final int life;
+  final int score;
+  final int totalScore;
+  final VoidCallback restart;
+  final VoidCallback extraLife;
+  final VoidCallback doubleScore;
+  PlayerOutDialog(
+      {Key? key,
+      required this.life,
+      required this.score,
+      required this.restart,
+      required this.extraLife,
+      required this.totalScore,
+      required this.doubleScore})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      backgroundColor: Color(0xff122530),
+      child: Container(
+        padding: EdgeInsets.all(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Your Score",
+              style: Theme.of(context).textTheme.headline4!.copyWith(
+                    color: Colors.white,
+                    letterSpacing: 2.5,
+                    fontFamily: 'Permanent Marker',
+                  ),
+            ),
+            _gap,
+            Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    jewelGem,
+                    width: 30,
+                  ),
+                  const SizedBox(
+                    width: 7,
+                  ),
+                  Text(
+                    'X',
+                    style: Theme.of(context).textTheme.subtitle1!.copyWith(
+                          color: Colors.white,
+                          letterSpacing: 2.5,
+                          fontFamily: 'Permanent Marker',
+                        ),
+                  ),
+                  const SizedBox(
+                    width: 7,
+                  ),
+                  Text(
+                    '$score',
+                    style: Theme.of(context).textTheme.headline5!.copyWith(
+                          color: Colors.white,
+                          letterSpacing: 2.5,
+                          fontFamily: 'Permanent Marker',
+                        ),
+                  )
+                ],
+              ),
+            ),
+            _gap,
+            Text(
+              'TOTAL SCORE',
+              style: Theme.of(context).textTheme.subtitle1!.copyWith(
+                    color: Colors.white,
+                    letterSpacing: 2.5,
+                    fontFamily: 'Permanent Marker',
+                  ),
+            ),
+            _gap,
+            Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    jewelGem,
+                    width: 30,
+                  ),
+                  const SizedBox(
+                    width: 7,
+                  ),
+                  Text(
+                    'X',
+                    style: Theme.of(context).textTheme.subtitle1!.copyWith(
+                          color: Colors.white,
+                          letterSpacing: 2.5,
+                          fontFamily: 'Permanent Marker',
+                        ),
+                  ),
+                  const SizedBox(
+                    width: 7,
+                  ),
+                  Text(
+                    '${totalScore}',
+                    style: Theme.of(context).textTheme.headline5!.copyWith(
+                          color: Colors.white,
+                          letterSpacing: 2.5,
+                          fontFamily: 'Permanent Marker',
+                        ),
+                  )
+                ],
+              ),
+            ),
+            _gap,
+            CustomElevatedButton(
+              color: Colors.blue,
+              buttonTitle: 'RESTART',
+              onPress: restart,
+            ),
+            _gap,
+            CustomElevatedButton(
+              color: Colors.green,
+              buttonTitle: 'EXTRA LIFE',
+              onPress: extraLife,
+            ),
+            _gap,
+            CustomElevatedButton(
+              color: Colors.cyan,
+              buttonTitle: '2x REWARD',
+              onPress: doubleScore,
+            ),
+            _gap,
+            CustomElevatedButton(
+              color: Colors.teal,
+              buttonTitle: 'MAIN MENU',
+              onPress: () {
+                ScorePersistence().addScore(score);
+                Navigator.pop(context);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

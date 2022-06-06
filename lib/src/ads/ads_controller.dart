@@ -12,6 +12,7 @@ class AdsController {
   final MobileAds _instance;
 
   PreloadedBannerAd? _preloadedAd;
+  RewardedAd? _rewardedAd;
 
   /// Creates an [AdsController] that wraps around a [MobileAds] [instance].
   ///
