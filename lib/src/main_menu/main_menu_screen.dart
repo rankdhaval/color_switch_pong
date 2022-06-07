@@ -92,7 +92,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
               onPress: () {
                 audioController.playSfx(SfxType.buttonTap);
 
-                GoRouter.of(context).go('/gameScreen');
+                GoRouter.of(context).go('/play');
               },
             ),
             /*ElevatedButton(

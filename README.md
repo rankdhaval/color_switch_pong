@@ -536,3 +536,38 @@ flutter pub run flutter_launcher_icons:main
 
 You can [configure](https://github.com/fluttercommunity/flutter_launcher_icons#book-guide)
 the look of the icon in the `flutter_icons:` section of `pubspec.yaml`.
+
+
+
+Playstore Description:
+
+Short Description:
+
+it's is casual game its add the flavor of color changes in classic pong game
+
+
+Color Switch Pong - Dash Game is casual game its add the flavor of color changes in classic pong game. its designed for kids but anyone can play the game.
+
+<b>Instructions:</b>
+
+-Use finger to move dash
+-don't miss the ball to win the game
+-change dash color according to gem color to collect point
+-avoid different color ball collision with gem
+- Ball color changes when it hits to dash
+
+<b>Features:</b>
+
+- super smooth control
+- good sound effects
+  -Drag left and right to move dash
+
+If you face any issues feel free to contact us on colorswitchpong@gmail.com
+
+We are working on some excited features stay tuned.
+
+<b>Upcoming Features:</b>
+
+-Different levels
+-other rewards
+-Rewards to voucher redeem 

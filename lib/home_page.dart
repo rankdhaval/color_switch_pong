@@ -10,7 +10,9 @@ import 'package:game_template/score_persistance.dart';
 import 'package:game_template/size_config.dart';
 import 'package:game_template/src/audio/audio_controller.dart';
 import 'package:game_template/src/audio/sounds.dart';
+import 'package:game_template/src/level_selection/levels.dart';
 import 'package:game_template/src/main_menu/main_menu_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 
@@ -19,7 +21,8 @@ enum Direction { UP, DOWN, LEFT, RIGHT }
 const _gap = SizedBox(height: 10);
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final GameLevel level;
+  const HomePage({super.key, required this.level});
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -51,8 +54,8 @@ class _HomePageState extends State<HomePage> {
   double pointObjectY = 20;
 
   //ball speed
-  double ballSpeedX = 0.003;
-  double ballSpeedY = 0.003;
+  double ballSpeedX = 0.002;
+  double ballSpeedY = 0.002;
 
   List<Color> colors = [
     Colors.pink,
@@ -134,6 +137,9 @@ class _HomePageState extends State<HomePage> {
       if (ballColor == pointObject.color) {
         audioController.playSfx(SfxType.congrats);
         score++;
+        if (score == widget.level.winScore) {
+          GoRouter.of(context).go('/play/won', extra: {'score': score});
+        }
         getRandomValuesForScoreObject();
       } else {
         decreaseLife();
@@ -270,7 +276,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-
+    ballSpeedX = ballSpeedY = widget.level.ballSpeed;
     loadRewardedAds();
     getRandomValuesForScoreObject();
   }

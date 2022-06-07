@@ -20,7 +20,6 @@ import 'src/app_lifecycle/app_lifecycle.dart';
 import 'src/audio/audio_controller.dart';
 import 'src/crashlytics/crashlytics.dart';
 import 'src/games_services/games_services.dart';
-import 'src/games_services/score.dart';
 import 'src/in_app_purchase/in_app_purchase.dart';
 import 'src/level_selection/levels.dart';
 import 'src/main_menu/main_menu_screen.dart';
@@ -134,11 +133,11 @@ class MyApp extends StatelessWidget {
           builder: (context, state) =>
               const MainMenuScreen(key: Key('main menu')),
           routes: [
-            GoRoute(
+            /*GoRoute(
               path: 'gameScreen',
               builder: (context, state) =>
                   const HomePage(key: Key('gameScreen')),
-            ),
+            ),*/
             GoRoute(
                 path: 'play',
                 pageBuilder: (context, state) => buildMyTransition(
@@ -158,27 +157,27 @@ class MyApp extends StatelessWidget {
                           level,
                           key: const Key('play session'),
                         ),
-                        color: context.watch<Palette>().backgroundPlaySession,
+                        color: context.watch<Palette>().backgroundMain,
                       );
                     },
                   ),
-                  /*GoRoute(
-                    path: 'gameScreen',
+                  GoRoute(
+                    path: 'gameScreen/:level',
                     pageBuilder: (context, state) {
-                      */ /*final levelNumber = int.parse(state.params['level']!);
+                      final levelNumber = int.parse(state.params['level']!);
                       final level = gameLevels
-                          .singleWhere((e) => e.number == levelNumber);*/ /*
+                          .singleWhere((e) => e.number == levelNumber);
                       return buildMyTransition(
-                        child: HomePage(),
-                        color: context.watch<Palette>().backgroundPlaySession,
+                        child: HomePage(level: level, key: Key('gameScreen')),
+                        color: context.watch<Palette>().backgroundMain,
                       );
                     },
-                  ),*/
+                  ),
                   GoRoute(
                     path: 'won',
                     pageBuilder: (context, state) {
                       final map = state.extra! as Map<String, dynamic>;
-                      final score = map['score'] as Score;
+                      final score = map['score'] as int;
 
                       return buildMyTransition(
                         child: WinGameScreen(
