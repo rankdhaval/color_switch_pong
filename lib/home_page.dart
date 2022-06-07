@@ -8,8 +8,11 @@ import 'package:flutter/services.dart';
 import 'package:game_template/assets.dart';
 import 'package:game_template/score_persistance.dart';
 import 'package:game_template/size_config.dart';
+import 'package:game_template/src/audio/audio_controller.dart';
+import 'package:game_template/src/audio/sounds.dart';
 import 'package:game_template/src/main_menu/main_menu_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:provider/provider.dart';
 
 enum Direction { UP, DOWN, LEFT, RIGHT }
 
@@ -35,6 +38,8 @@ class _HomePageState extends State<HomePage> {
   int score = 0;
   int life = 3;
   RewardedAd? _rewardedAd;
+
+  late AudioController audioController;
 
   Timer? _timer;
 
@@ -78,6 +83,7 @@ class _HomePageState extends State<HomePage> {
 
   void updateDirection() {
     if (ballY >= 0.84 && playerX + playerWidth >= ballX && playerX <= ballX) {
+      audioController.playSfx(SfxType.hit);
       ballYDirection = Direction.UP;
       ballColor = brickColor;
     } else if (ballY <= -1) {
@@ -126,6 +132,7 @@ class _HomePageState extends State<HomePage> {
         ballY < (pointObjectY + length) &&
         ballY > (pointObjectY - length)) {
       if (ballColor == pointObject.color) {
+        audioController.playSfx(SfxType.congrats);
         score++;
         getRandomValuesForScoreObject();
       } else {
@@ -173,6 +180,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> decreaseLife() async {
+    audioController.playSfx(SfxType.out);
     --life;
     if (life == 0) {
       //TODO: show dialog box and navigate back
@@ -186,6 +194,7 @@ class _HomePageState extends State<HomePage> {
                     score: score,
                     totalScore: total,
                     restart: () {
+                      audioController.playSfx(SfxType.buttonTap);
                       ScorePersistence().addScore(score);
 
                       setState(() {
@@ -196,6 +205,7 @@ class _HomePageState extends State<HomePage> {
                       Navigator.pop(context);
                     },
                     extraLife: () {
+                      audioController.playSfx(SfxType.buttonTap);
                       _rewardedAd!.show(onUserEarnedReward:
                           (AdWithoutView ad, RewardItem rewardItem) {
                         // Reward the user for watching an ad.
@@ -209,6 +219,7 @@ class _HomePageState extends State<HomePage> {
                     doubleScore: disable2x
                         ? () {}
                         : () {
+                            audioController.playSfx(SfxType.buttonTap);
                             _rewardedAd!.show(onUserEarnedReward:
                                 (AdWithoutView ad, RewardItem rewardItem) {
                               // Reward the user for watching an ad.
@@ -268,6 +279,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    audioController = context.watch<AudioController>();
     return GestureDetector(
       onHorizontalDragStart: (DragStartDetails details) {
         previousDetail = details.globalPosition;
@@ -574,6 +586,7 @@ class PlayerOutDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final audioController = context.watch<AudioController>();
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       backgroundColor: Color(0xff122530),
@@ -690,6 +703,7 @@ class PlayerOutDialog extends StatelessWidget {
               color: Colors.teal,
               buttonTitle: 'MAIN MENU',
               onPress: () {
+                audioController.playSfx(SfxType.buttonTap);
                 ScorePersistence().addScore(score);
                 Navigator.pop(context);
                 Navigator.pop(context);

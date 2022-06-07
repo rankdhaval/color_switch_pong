@@ -125,7 +125,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             CustomElevatedButton(
                 color: Colors.cyan,
                 buttonTitle: 'Settings',
-                onPress: () => GoRouter.of(context).go('/settings')),
+                onPress: () {
+                  audioController.playSfx(SfxType.buttonTap);
+                  GoRouter.of(context).go('/settings');
+                }),
             /*ElevatedButton(
               onPressed: () => GoRouter.of(context).go('/settings'),
               child: const Text('Settings'),
@@ -146,15 +149,16 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             _gap,
             const Text('Music by Mr Smith'),
             _gap,
-            if (_isBannerAdReady)
-              Align(
-                alignment: Alignment.topCenter,
-                child: Container(
-                  width: _bannerAd.size.width.toDouble(),
-                  height: _bannerAd.size.height.toDouble(),
-                  child: AdWidget(ad: _bannerAd),
-                ),
-              ),
+            _isBannerAdReady
+                ? Container(
+                    width: AdSize.banner.width.toDouble(),
+                    height: AdSize.banner.height.toDouble(),
+                    child: AdWidget(ad: _bannerAd),
+                  )
+                : SizedBox(
+                    width: AdSize.banner.width.toDouble(),
+                    height: AdSize.banner.height.toDouble(),
+                  ),
           ],
         ),
       ),
