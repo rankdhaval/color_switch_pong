@@ -134,7 +134,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
               child: const Text('Settings'),
             ),*/
             _gap,
-            Padding(
+            /*Padding(
               padding: const EdgeInsets.only(top: 32),
               child: ValueListenableBuilder<bool>(
                 valueListenable: settingsController.muted,
@@ -146,7 +146,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 },
               ),
             ),
-            _gap,
+            _gap,*/
             const Text('Music by Mr Smith'),
             _gap,
             _isBannerAdReady

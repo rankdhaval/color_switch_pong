@@ -551,6 +551,8 @@ Color Switch Pong - Dash Game is casual game its add the flavor of color changes
 <b>Instructions:</b>
 
 -Use finger to move dash
+-collect hearts to increase life
+-collect white ball to enable super collector functionality 
 -don't miss the ball to win the game
 -change dash color according to gem color to collect point
 -avoid different color ball collision with gem

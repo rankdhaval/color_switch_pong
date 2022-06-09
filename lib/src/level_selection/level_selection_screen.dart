@@ -94,7 +94,7 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 50),
+            const SizedBox(height: 10),
             Expanded(
               child: ListView(
                 children: [
@@ -113,12 +113,17 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen> {
                       },
                       title: Center(
                         child: Text(level.name,
-                            style:
-                                Theme.of(context).textTheme.headline5!.copyWith(
-                                      color: Colors.white,
-                                      letterSpacing: 2.5,
-                                      fontFamily: 'Permanent Marker',
-                                    )),
+                            style: Theme.of(context)
+                                .textTheme
+                                .headline5!
+                                .copyWith(
+                                  color: (playerProgress.highestLevelReached >=
+                                          level.number - 1)
+                                      ? Colors.white
+                                      : Colors.blueGrey,
+                                  letterSpacing: 2.5,
+                                  fontFamily: 'Permanent Marker',
+                                )),
                       ),
                     )
                 ],

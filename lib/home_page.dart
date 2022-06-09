@@ -12,6 +12,7 @@ import 'package:game_template/src/audio/audio_controller.dart';
 import 'package:game_template/src/audio/sounds.dart';
 import 'package:game_template/src/level_selection/levels.dart';
 import 'package:game_template/src/main_menu/main_menu_screen.dart';
+import 'package:game_template/src/player_progress/player_progress.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
@@ -30,7 +31,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool gameHasStarted = false;
   double ballX = 0;
-  double ballY = 0.84;
+  double ballY = 0.940;
   double playerX = -0.2;
   double enemyX = -0.2;
   double playerWidth = 0.4;
@@ -84,11 +85,80 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  double lifeX = 0;
+  double lifeY = 0;
+  bool lifeVisibility = false;
+  Timer? lifeTimer;
+  void getPositionForExtraLife() {
+    final _random = Random();
+    setState(() {
+      bool xval = _random.nextBool();
+      lifeX = (_random.nextInt(10) / 15) * (xval == true ? 1 : -1);
+      bool yval = _random.nextBool();
+      lifeY = (_random.nextInt(10) / 30) * (yval == true ? 1 : -1);
+    });
+    lifeTimer = Timer(
+      Duration(seconds: widget.level.lifeTimerSeconds),
+      () {
+        setState(() {
+          lifeVisibility = false;
+        });
+      },
+    );
+  }
+
+  double superCollectorBallX = 0;
+  double superCollectorBallY = 0;
+  bool superCollectorBallVisibility = false;
+  bool superCollectorBallActivate = false;
+  Timer? superCollectorBallTimer;
+  Timer? superCollectorBallActiveTimer;
+  void getPositionForSuperBall() {
+    final _random = Random();
+    setState(() {
+      bool xval = _random.nextBool();
+      superCollectorBallX =
+          (_random.nextInt(10) / 15) * (xval == true ? 1 : -1);
+      bool yval = _random.nextBool();
+      superCollectorBallY =
+          (_random.nextInt(10) / 30) * (yval == true ? 1 : -1);
+    });
+    superCollectorBallTimer = Timer(
+      Duration(seconds: widget.level.superBallTimerSeconds),
+      () {
+        setState(() {
+          superCollectorBallVisibility = false;
+        });
+      },
+    );
+  }
+
+/*  double ballMultiplierX = 0;
+  double ballMultiplierY = 0;
+
+  void getBallMultiplier(){
+    final _random = Random();
+    setState(() {
+      bool xval = _random.nextBool();
+      ballMultiplierX = (_random.nextInt(10) / 15) * (xval == true ? 1 : -1);
+      bool yval = _random.nextBool();
+      ballMultiplierY = (_random.nextInt(10) / 30) * (yval == true ? 1 : -1);
+    });
+    lifeTimer = Timer(
+      Duration(seconds: 30),
+          () {
+        setState(() {
+          lifeVisibility = false;
+        });
+      },
+    );
+  }*/
+
   void updateDirection() {
-    if (ballY >= 0.84 && playerX + playerWidth >= ballX && playerX <= ballX) {
+    if (ballY >= 0.96 && playerX + playerWidth >= ballX && playerX <= ballX) {
       audioController.playSfx(SfxType.hit);
       ballYDirection = Direction.UP;
-      ballColor = brickColor;
+      if (!superCollectorBallActivate) ballColor = brickColor;
     } else if (ballY <= -1) {
       ballYDirection = Direction.DOWN;
     }
@@ -134,18 +204,51 @@ class _HomePageState extends State<HomePage> {
         ballX > (pointObjectX - length) &&
         ballY < (pointObjectY + length) &&
         ballY > (pointObjectY - length)) {
-      if (ballColor == pointObject.color) {
+      if (ballColor == pointObject.color || superCollectorBallActivate) {
+        getRandomValuesForScoreObject();
         audioController.playSfx(SfxType.congrats);
         score++;
+        print("====================== $score");
         if (score == widget.level.winScore) {
+          final playerProgress = context.read<PlayerProgress>();
+          playerProgress.setLevelReached(widget.level.number);
           GoRouter.of(context).go('/play/won', extra: {'score': score});
         }
-        getRandomValuesForScoreObject();
+        if (score % widget.level.scoreIntervalForShowLife == 0) {
+          lifeVisibility = true;
+          getPositionForExtraLife();
+        } else if (score % widget.level.superBallActivateTimerSeconds == 0) {
+          superCollectorBallVisibility = true;
+          getPositionForSuperBall();
+        }
       } else {
         decreaseLife();
         _timer?.cancel();
         reSetGame();
       }
+    } else if (ballX < (lifeX + length) &&
+        ballX > (lifeX - length) &&
+        ballY < (lifeY + length) &&
+        ballY > (lifeY - length) &&
+        lifeVisibility == true) {
+      if (life < 5) {
+        life++;
+        lifeTimer?.cancel();
+        lifeVisibility = false;
+      }
+    } else if (ballX < (superCollectorBallX + length) &&
+        ballX > (superCollectorBallX - length) &&
+        ballY < (superCollectorBallY + length) &&
+        ballY > (superCollectorBallY - length) &&
+        superCollectorBallVisibility == true) {
+      ballColor = Colors.white;
+      superCollectorBallVisibility = false;
+      superCollectorBallActivate = true;
+      superCollectorBallActiveTimer = Timer(
+          Duration(seconds: widget.level.superBallActivateTimerSeconds), () {
+        superCollectorBallActivate = false;
+        ballColor = brickColor;
+      });
     }
   }
 
@@ -158,7 +261,7 @@ class _HomePageState extends State<HomePage> {
   void reSetGame() {
     gameHasStarted = false;
     ballX = 0;
-    ballY = 0.84;
+    ballY = 0.945;
     playerX = -0.2;
     enemyX = -0.2;
   }
@@ -188,6 +291,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> decreaseLife() async {
     audioController.playSfx(SfxType.out);
     --life;
+    ballXDirection = Direction.LEFT;
     if (life == 0) {
       //TODO: show dialog box and navigate back
 
@@ -202,6 +306,12 @@ class _HomePageState extends State<HomePage> {
                     restart: () {
                       audioController.playSfx(SfxType.buttonTap);
                       ScorePersistence().addScore(score);
+
+                      _rewardedInterstitialAd?.show(onUserEarnedReward:
+                          (AdWithoutView ad, RewardItem rewardItem) {
+                      });
+
+                      loadRewardedInterstrial();
 
                       setState(() {
                         score = 0;
@@ -257,7 +367,7 @@ class _HomePageState extends State<HomePage> {
             print('RewardedAd failed to load: $error');
           },
         )).then((ad) {
-      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      _rewardedAd?.fullScreenContentCallback = FullScreenContentCallback(
         onAdShowedFullScreenContent: (RewardedAd ad) =>
             print('$ad onAdShowedFullScreenContent.'),
         onAdDismissedFullScreenContent: (RewardedAd ad) {
@@ -273,11 +383,46 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  RewardedInterstitialAd? _rewardedInterstitialAd;
+  void loadRewardedInterstrial() {
+    RewardedInterstitialAd.load(
+        adUnitId: 'ca-app-pub-9376762525267033/6824149171',
+        request: AdRequest(),
+        rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
+          onAdLoaded: (RewardedInterstitialAd ad) {
+            print('$ad loaded.');
+            // Keep a reference to the ad so you can show it later.
+            this._rewardedInterstitialAd = ad;
+          },
+          onAdFailedToLoad: (LoadAdError error) {
+            print('RewardedInterstitialAd failed to load: $error');
+          },
+        )).then((value) {
+      _rewardedInterstitialAd?.fullScreenContentCallback =
+          FullScreenContentCallback(
+        onAdShowedFullScreenContent: (RewardedInterstitialAd ad) =>
+            print('$ad onAdShowedFullScreenContent.'),
+        onAdDismissedFullScreenContent: (RewardedInterstitialAd ad) {
+          print('$ad onAdDismissedFullScreenContent.');
+          ad.dispose();
+        },
+        onAdFailedToShowFullScreenContent:
+            (RewardedInterstitialAd ad, AdError error) {
+          print('$ad onAdFailedToShowFullScreenContent: $error');
+          ad.dispose();
+        },
+        onAdImpression: (RewardedInterstitialAd ad) =>
+            print('$ad impression occurred.'),
+      );
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     ballSpeedX = ballSpeedY = widget.level.ballSpeed;
     loadRewardedAds();
+    loadRewardedInterstrial();
     getRandomValuesForScoreObject();
   }
 
@@ -392,7 +537,7 @@ class _HomePageState extends State<HomePage> {
 
                     MyBrick(
                       x: playerX,
-                      y: 0.9,
+                      y: 1,
                       playerWidth: playerWidth,
                       color: brickColor,
                     ),
@@ -401,34 +546,48 @@ class _HomePageState extends State<HomePage> {
                       y: ballY,
                       myBallColor: ballColor,
                     ),
-                    Container(
-                      alignment: Alignment(0, 1),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: List.generate(
-                            colors.length,
-                            (index) => ColorOptions(
-                                  color: colors[index],
-                                  selected: selectedColor == colors[index],
-                                  onTap: () {
-                                    setState(() {
-                                      selectedColor = colors[index];
-                                      brickColor = selectedColor;
-                                      if (!gameHasStarted)
-                                        ballColor = selectedColor;
-                                    });
-                                  },
-                                )),
-                      ),
-                    ),
                     PointObject(
                       gemModel: pointObject,
                       width: pointObjectWidth,
                       height: pointObjectHeight,
                       x: pointObjectX,
                       y: pointObjectY,
-                    )
+                    ),
+                    Visibility(
+                        visible: lifeVisibility,
+                        child: ExtraLife(
+                          x: lifeX,
+                          y: lifeY,
+                          width: pointObjectWidth,
+                          height: pointObjectHeight,
+                        )),
+                    Visibility(
+                        visible: superCollectorBallVisibility,
+                        child: MyBall(
+                          x: superCollectorBallX,
+                          y: superCollectorBallY,
+                          myBallColor: Colors.white,
+                        ))
                   ],
+                ),
+              ),
+              bottomNavigationBar: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(
+                      colors.length,
+                      (index) => ColorOptions(
+                            color: colors[index],
+                            selected: selectedColor == colors[index],
+                            onTap: () {
+                              setState(() {
+                                selectedColor = colors[index];
+                                brickColor = selectedColor;
+                                if (!gameHasStarted) ballColor = selectedColor;
+                              });
+                            },
+                          )),
                 ),
               ),
             ),
@@ -456,8 +615,8 @@ class ColorOptions extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        height: 30,
-        width: 30,
+        height: 40,
+        width: 40,
         decoration: BoxDecoration(
             border: selected ? Border.all(width: 3, color: Colors.white) : null,
             shape: BoxShape.circle,
@@ -560,6 +719,32 @@ class PointObject extends StatelessWidget {
       alignment: Alignment(x, y),
       child: Image.asset(
         gemModel.path,
+        width: 30,
+      ),
+    );
+  }
+}
+
+class ExtraLife extends StatelessWidget {
+  final double x;
+  final double y;
+  final double width;
+  double height = 20;
+
+  ExtraLife({
+    Key? key,
+    required this.x,
+    required this.y,
+    required this.width,
+    this.height = 20,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: Alignment(x, y),
+      child: Image.asset(
+        lifeGem,
         width: 30,
       ),
     );
