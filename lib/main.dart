@@ -8,6 +8,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:game_template/achievements_screen.dart';
 import 'package:game_template/home_page.dart';
 import 'package:game_template/src/level_selection/level_selection_screen.dart';
 import 'package:go_router/go_router.dart';
@@ -193,6 +194,11 @@ class MyApp extends StatelessWidget {
               path: 'settings',
               builder: (context, state) =>
                   const SettingsScreen(key: Key('settings')),
+            ),
+            GoRoute(
+              path: 'achievements',
+              builder: (context, state) =>
+                  const Achievements(key: Key('achievements')),
             ),
           ]),
     ],

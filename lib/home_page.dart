@@ -16,6 +16,7 @@ import 'package:game_template/src/player_progress/player_progress.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 enum Direction { UP, DOWN, LEFT, RIGHT }
 
@@ -42,6 +43,15 @@ class _HomePageState extends State<HomePage> {
   int score = 0;
   int life = 3;
   RewardedAd? _rewardedAd;
+
+  //widget keys
+  GlobalKey brickKey = GlobalKey();
+  GlobalKey superBallKey = GlobalKey();
+  GlobalKey colorChangerKey = GlobalKey();
+  GlobalKey ballKey = GlobalKey();
+  GlobalKey gemKey = GlobalKey();
+  GlobalKey scoreKey = GlobalKey();
+  GlobalKey lifeKey = GlobalKey();
 
   late AudioController audioController;
 
@@ -303,13 +313,14 @@ class _HomePageState extends State<HomePage> {
                     life: life,
                     score: score,
                     totalScore: total,
+                    winScore: widget.level.winScore,
                     restart: () {
                       audioController.playSfx(SfxType.buttonTap);
                       ScorePersistence().addScore(score);
 
-                      _rewardedInterstitialAd?.show(onUserEarnedReward:
-                          (AdWithoutView ad, RewardItem rewardItem) {
-                      });
+                      _rewardedInterstitialAd?.show(
+                          onUserEarnedReward:
+                              (AdWithoutView ad, RewardItem rewardItem) {});
 
                       loadRewardedInterstrial();
 
@@ -424,6 +435,217 @@ class _HomePageState extends State<HomePage> {
     loadRewardedAds();
     loadRewardedInterstrial();
     getRandomValuesForScoreObject();
+    targetsDecisionMethod();
+  }
+
+  Future<void> targetsDecisionMethod() async {
+    if (await ScorePersistence().getFirstTime()) {
+      addTargets();
+      Future.delayed(Duration.zero, showTutorial);
+      await ScorePersistence().setFirstTime();
+    }
+  }
+
+  List<TargetFocus> targets = [];
+  void addTargets() {
+    targets.add(TargetFocus(
+        identify: "Target 1",
+        keyTarget: colorChangerKey,
+        contents: [
+          TargetContent(
+              align: ContentAlign.top,
+              child: Container(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const <Widget>[
+                    Text(
+                      "Change Color",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontSize: 20.0),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(top: 10.0),
+                      child: Text(
+                        "Select Color to change the color of brick and ball. when you select color bricks color will be selected color.",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    )
+                  ],
+                ),
+              ))
+        ]));
+
+    targets
+        .add(TargetFocus(identify: "Target 2", keyTarget: brickKey, contents: [
+      TargetContent(
+          align: ContentAlign.top,
+          child: Container(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const <Widget>[
+                Text(
+                  "bounce ball",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    "when ball hits the brick color of ball would be changes as brick.",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ))
+    ]));
+
+    targets
+        .add(TargetFocus(identify: "Target 3", keyTarget: ballKey, contents: [
+      TargetContent(
+          align: ContentAlign.top,
+          child: Container(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const <Widget>[
+                Text(
+                  "ball",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    "when gem color ball touches to gem you will get the point",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ))
+    ]));
+
+    targets.add(TargetFocus(identify: "Target 4", keyTarget: gemKey, contents: [
+      TargetContent(
+          align: ContentAlign.top,
+          child: Container(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const <Widget>[
+                Text(
+                  "Gem",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    "Ball touches gem you get point",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ))
+    ]));
+
+    targets
+        .add(TargetFocus(identify: "Target 5", keyTarget: scoreKey, contents: [
+      TargetContent(
+          align: ContentAlign.bottom,
+          child: Container(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const <Widget>[
+                Text(
+                  "Score",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    "Your Score will Displayed Here",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ))
+    ]));
+
+    targets
+        .add(TargetFocus(identify: "Target 6", keyTarget: lifeKey, contents: [
+      TargetContent(
+          align: ContentAlign.bottom,
+          child: Container(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const <Widget>[
+                Text(
+                  "Lifes",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    "Your Remaining lifes will be shown here",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ))
+    ]));
+  }
+
+  void showTutorial() {
+    TutorialCoachMark(
+      context,
+      targets: targets, // List<TargetFocus>
+      colorShadow: Colors.black, // DEFAULT Colors.black
+
+      // alignSkip: Alignment.bottomRight,
+      // textSkip: "SKIP",
+      // paddingFocus: 10,
+      opacityShadow: 0.6,
+      onClickTarget: (target) {
+        print(target);
+      },
+      onClickTargetWithTapPosition: (target, tapDetails) {
+        print("target: $target");
+        print(
+            "clicked at position local: ${tapDetails.localPosition} - global: ${tapDetails.globalPosition}");
+      },
+      onClickOverlay: (target) {
+        print(target);
+      },
+      onSkip: () {
+        print("skip");
+      },
+      onFinish: () {
+        print("finish");
+      },
+    ).show();
   }
 
   Offset? previousDetail;
@@ -472,7 +694,8 @@ class _HomePageState extends State<HomePage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        width: MediaQuery.of(context).size.width / 4,
+                        key: scoreKey,
+                        width: MediaQuery.of(context).size.width / 2.5,
                         decoration: BoxDecoration(
                             color: Colors.blue,
                             borderRadius: BorderRadius.circular(20),
@@ -491,7 +714,7 @@ class _HomePageState extends State<HomePage> {
                               width: 10,
                             ),
                             Text(
-                              score.toString(),
+                              '${score} / ${widget.level.winScore}',
                               style: Theme.of(context)
                                   .textTheme
                                   .headline5!
@@ -505,6 +728,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       Container(
+                        key: lifeKey,
                         padding: EdgeInsets.all(2),
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(20),
@@ -536,17 +760,20 @@ class _HomePageState extends State<HomePage> {
                     ),*/
 
                     MyBrick(
+                      key: brickKey,
                       x: playerX,
                       y: 1,
                       playerWidth: playerWidth,
                       color: brickColor,
                     ),
                     MyBall(
+                      key: ballKey,
                       x: ballX,
                       y: ballY,
                       myBallColor: ballColor,
                     ),
                     PointObject(
+                      key: gemKey,
                       gemModel: pointObject,
                       width: pointObjectWidth,
                       height: pointObjectHeight,
@@ -564,6 +791,7 @@ class _HomePageState extends State<HomePage> {
                     Visibility(
                         visible: superCollectorBallVisibility,
                         child: MyBall(
+                          key: superBallKey,
                           x: superCollectorBallX,
                           y: superCollectorBallY,
                           myBallColor: Colors.white,
@@ -578,6 +806,7 @@ class _HomePageState extends State<HomePage> {
                   children: List.generate(
                       colors.length,
                       (index) => ColorOptions(
+                            key: index == 1 ? colorChangerKey : null,
                             color: colors[index],
                             selected: selectedColor == colors[index],
                             onTap: () {
@@ -600,19 +829,21 @@ class _HomePageState extends State<HomePage> {
 
 class ColorOptions extends StatelessWidget {
   final void Function() onTap;
+  final Key? key;
   final Color color;
   final bool selected;
 
   const ColorOptions(
-      {Key? key,
-      required this.onTap,
+      {required this.onTap,
       required this.color,
-      required this.selected})
+      required this.selected,
+      this.key})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
+      key: key,
       onTap: onTap,
       child: Container(
         height: 40,
@@ -627,6 +858,7 @@ class ColorOptions extends StatelessWidget {
 }
 
 class MyBrick extends StatelessWidget {
+  final Key key;
   final double x;
   final double y;
   final double playerWidth;
@@ -636,13 +868,15 @@ class MyBrick extends StatelessWidget {
       {required this.x,
       required this.y,
       required this.playerWidth,
-      required this.color});
+      required this.color,
+      required this.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       alignment: Alignment((2 * x + playerWidth) / (2 - playerWidth), y),
       child: ClipRRect(
+        key: key,
         borderRadius: BorderRadius.circular(10),
         child: Container(
           color: color,
@@ -655,17 +889,23 @@ class MyBrick extends StatelessWidget {
 }
 
 class MyBall extends StatelessWidget {
+  final Key key;
   final double x;
   final double y;
   final Color myBallColor;
 
-  MyBall({required this.x, required this.y, required this.myBallColor});
+  MyBall(
+      {required this.x,
+      required this.y,
+      required this.myBallColor,
+      required this.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       alignment: Alignment(x, y),
       child: Container(
+        key: key,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: myBallColor,
@@ -698,6 +938,7 @@ class CoverScreen extends StatelessWidget {
 }
 
 class PointObject extends StatelessWidget {
+  final Key key;
   final double x;
   final double y;
   final double width;
@@ -705,7 +946,7 @@ class PointObject extends StatelessWidget {
   double height = 20;
 
   PointObject(
-      {Key? key,
+      {required this.key,
       required this.x,
       required this.y,
       required this.width,
@@ -718,6 +959,7 @@ class PointObject extends StatelessWidget {
     return Container(
       alignment: Alignment(x, y),
       child: Image.asset(
+        key: key,
         gemModel.path,
         width: 30,
       ),
@@ -762,6 +1004,7 @@ class PlayerOutDialog extends StatelessWidget {
   final int life;
   final int score;
   final int totalScore;
+  final int winScore;
   final VoidCallback restart;
   final VoidCallback extraLife;
   final VoidCallback doubleScore;
@@ -772,7 +1015,8 @@ class PlayerOutDialog extends StatelessWidget {
       required this.restart,
       required this.extraLife,
       required this.totalScore,
-      required this.doubleScore})
+      required this.doubleScore,
+      required this.winScore})
       : super(key: key);
 
   @override
@@ -806,7 +1050,7 @@ class PlayerOutDialog extends StatelessWidget {
                   const SizedBox(
                     width: 7,
                   ),
-                  Text(
+                  /*Text(
                     'X',
                     style: Theme.of(context).textTheme.subtitle1!.copyWith(
                           color: Colors.white,
@@ -816,9 +1060,9 @@ class PlayerOutDialog extends StatelessWidget {
                   ),
                   const SizedBox(
                     width: 7,
-                  ),
+                  ),*/
                   Text(
-                    '$score',
+                    '$score / $winScore',
                     style: Theme.of(context).textTheme.headline5!.copyWith(
                           color: Colors.white,
                           letterSpacing: 2.5,
@@ -846,7 +1090,7 @@ class PlayerOutDialog extends StatelessWidget {
                     jewelGem,
                     width: 30,
                   ),
-                  const SizedBox(
+                  /*const SizedBox(
                     width: 7,
                   ),
                   Text(
@@ -856,7 +1100,7 @@ class PlayerOutDialog extends StatelessWidget {
                           letterSpacing: 2.5,
                           fontFamily: 'Permanent Marker',
                         ),
-                  ),
+                  ),*/
                   const SizedBox(
                     width: 7,
                   ),

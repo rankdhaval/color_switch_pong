@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:in_app_update/in_app_update.dart';
 import 'package:provider/provider.dart';
 
 import '../../size_config.dart';
@@ -26,6 +27,30 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   late BannerAd _bannerAd;
 
   bool _isBannerAdReady = false;
+
+  AppUpdateInfo? _updateInfo;
+
+  GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey();
+
+  bool _flexibleUpdateAvailable = false;
+
+  // Platform messages are asynchronous, so we initialize in an async method.
+  Future<void> checkForUpdate() async {
+    _updateInfo = await InAppUpdate.checkForUpdate();
+
+    _updateInfo?.updateAvailability == UpdateAvailability.updateAvailable
+        ? () async {
+            return await InAppUpdate.startFlexibleUpdate();
+          }
+        : null;
+  }
+
+  void showSnack(String text) {
+    if (_scaffoldKey.currentContext != null) {
+      ScaffoldMessenger.of(_scaffoldKey.currentContext!)
+          .showSnackBar(SnackBar(content: Text(text)));
+    }
+  }
 
   @override
   void dispose() {
@@ -54,6 +79,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     );
 
     _bannerAd.load();
+    checkForUpdate();
 
     super.initState();
   }
@@ -95,6 +121,16 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 GoRouter.of(context).go('/play');
               },
             ),
+            /*_gap,
+            CustomElevatedButton(
+              color: Colors.deepPurple,
+              buttonTitle: 'Achievements',
+              onPress: () {
+                audioController.playSfx(SfxType.buttonTap);
+
+                GoRouter.of(context).go('/achievements');
+              },
+            ),*/
             /*ElevatedButton(
               onPressed: () {
                 audioController.playSfx(SfxType.buttonTap);

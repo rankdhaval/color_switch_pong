@@ -19,4 +19,14 @@ class ScorePersistence {
     final prefs = await instanceFuture;
     return prefs.getInt('Score') ?? 0;
   }
+
+  Future<bool> getFirstTime() async {
+    final prefs = await instanceFuture;
+    return prefs.getBool('FirstTime') ?? true;
+  }
+
+  Future<void> setFirstTime() async {
+    final prefs = await instanceFuture;
+    await prefs.setBool('FirstTime', false);
+  }
 }

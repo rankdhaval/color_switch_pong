@@ -570,6 +570,6 @@ We are working on some excited features stay tuned.
 
 <b>Upcoming Features:</b>
 
--Different levels
+-Different levels 
 -other rewards
 -Rewards to voucher redeem 
